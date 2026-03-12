@@ -11,7 +11,7 @@ export function RetroPanel({ children, title, variant = "default", className, ..
   return (
     <div 
       className={cn(
-        "relative border-2 bg-card/80 backdrop-blur-sm p-6 overflow-hidden",
+        "relative border-2 bg-card/80 backdrop-blur-sm p-6 overflow-visible",
         variant === "default" && "border-primary glow-box-red",
         variant === "danger" && "border-destructive glow-box-red",
         variant === "success" && "border-accent glow-box",
