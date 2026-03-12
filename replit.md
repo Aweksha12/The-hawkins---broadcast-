@@ -42,10 +42,14 @@ A synchronized media player with a retro Stranger Things aesthetic.
 ### Features
 - **Broadcaster role**: Creates a session, controls play/pause/seek, shares a session code
 - **Listener role**: Joins via session code, receives real-time sync of all playback actions
-- **WebSocket-based sync**: Play, pause, seek actions broadcast to all listeners instantly
-- **Drift correction**: Listeners auto-seek if drift > 0.5 seconds
+- **WebSocket-based sync**: Play, pause, seek actions broadcast to all listeners instantly — always active as primary/fallback
+- **WebRTC P2P sync**: Listener initiates WebRTC data channel connection to broadcaster; sync messages travel P2P once established
+- **STUN servers**: Google (stun.l.google.com:19302, stun1.l.google.com:19302) and Cloudflare (stun.cloudflare.com:3478) for NAT traversal and peer discovery
+- **Drift correction**: Listeners auto-seek if drift > 0.5 seconds; continuous drift recomputed every 250ms
 - **Latency measurement**: Ping/pong messages measure one-way latency
 - **Sync status**: SYNCHRONIZED / SYNCING / SIGNAL LOST indicators
+- **Visual Timecode Overlay**: HH:MM:SS.mmm display on the player; listeners see both local TC and broadcast TC with ±drift in ms
+- **Network Debug Panel**: Toggle via bug icon — shows WebSocket status, latency, WS ID, WebRTC ICE state per peer, data channel state, STUN server list, drift stats, transport type
 - **Retro UI**: CRT scanlines, amber/red glow, VT323/Share Tech Mono fonts, 80s horror console aesthetic
 
 ### Architecture
