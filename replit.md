@@ -10,7 +10,7 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Node.js version**: 24
 - **Package manager**: pnpm
 - **TypeScript version**: 5.9
-- **API framework**: Express 5
+- **API framework**: Express 5 + WebSocket (ws)
 - **Database**: PostgreSQL + Drizzle ORM
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
@@ -21,27 +21,54 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 ```text
 artifacts-monorepo/
 ├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
+│   ├── api-server/         # Express API server + WebSocket sync
+│   └── hawkins-broadcast/  # React frontend (Stranger Things UI)
 ├── lib/                    # Shared libraries
 │   ├── api-spec/           # OpenAPI spec + Orval codegen config
 │   ├── api-client-react/   # Generated React Query hooks
 │   ├── api-zod/            # Generated Zod schemas from OpenAPI
 │   └── db/                 # Drizzle ORM schema + DB connection
 ├── scripts/                # Utility scripts (single workspace package)
-│   └── src/                # Individual .ts scripts, run via `pnpm --filter @workspace/scripts run <script>`
-├── pnpm-workspace.yaml     # pnpm workspace (artifacts/*, lib/*, lib/integrations/*, scripts)
+├── pnpm-workspace.yaml     # pnpm workspace (artifacts/*, lib/*, scripts)
 ├── tsconfig.base.json      # Shared TS options (composite, bundler resolution, es2022)
 ├── tsconfig.json           # Root TS project references
 └── package.json            # Root package with hoisted devDeps
 ```
 
+## Application: Hawkins Emergency Broadcast System
+
+A synchronized media player with a retro Stranger Things aesthetic.
+
+### Features
+- **Broadcaster role**: Creates a session, controls play/pause/seek, shares a session code
+- **Listener role**: Joins via session code, receives real-time sync of all playback actions
+- **WebSocket-based sync**: Play, pause, seek actions broadcast to all listeners instantly
+- **Drift correction**: Listeners auto-seek if drift > 0.5 seconds
+- **Latency measurement**: Ping/pong messages measure one-way latency
+- **Sync status**: SYNCHRONIZED / SYNCING / SIGNAL LOST indicators
+- **Retro UI**: CRT scanlines, amber/red glow, VT323/Share Tech Mono fonts, 80s horror console aesthetic
+
+### Architecture
+- **Frontend** (`artifacts/hawkins-broadcast`): React + Vite, wouter routing, React Query for API calls, native WebSocket hook
+- **Backend** (`artifacts/api-server`): Express 5 + `ws` WebSocket server, in-memory session store
+- **Routes**: `POST /api/sessions`, `GET /api/sessions/:id`, `GET /api/sessions/:id/state`
+- **WebSocket**: `/ws?sessionId=XXX&role=broadcaster|listener`
+
+### WebSocket Protocol
+Messages (JSON):
+- `{type:"sync", isPlaying, currentTime, duration, timestamp, videoUrl}` — broadcaster sends, listeners receive
+- `{type:"connected", role, state}` — server sends on connect with initial state
+- `{type:"listener_count", count}` — server sends to broadcaster when listener count changes
+- `{type:"ping/pong", timestamp}` — latency measurement
+- `{type:"broadcaster_disconnected"}` — sent to listeners when broadcaster leaves
+
 ## TypeScript & Composite Projects
 
-Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references. This means:
+Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references.
 
-- **Always typecheck from the root** — run `pnpm run typecheck` (which runs `tsc --build --emitDeclarationOnly`). This builds the full dependency graph so that cross-package imports resolve correctly. Running `tsc` inside a single package will fail if its dependencies haven't been built yet.
-- **`emitDeclarationOnly`** — we only emit `.d.ts` files during typecheck; actual JS bundling is handled by esbuild/tsx/vite...etc, not `tsc`.
-- **Project references** — when package A depends on package B, A's `tsconfig.json` must list B in its `references` array. `tsc --build` uses this to determine build order and skip up-to-date packages.
+- **Always typecheck from the root** — run `pnpm run typecheck`
+- **`emitDeclarationOnly`** — only emit `.d.ts` files during typecheck
+- **Project references** — when package A depends on package B, A's `tsconfig.json` must list B in its `references` array
 
 ## Root Scripts
 
@@ -50,47 +77,30 @@ Every package extends `tsconfig.base.json` which sets `composite: true`. The roo
 
 ## Packages
 
+### `artifacts/hawkins-broadcast` (`@workspace/hawkins-broadcast`)
+
+React + Vite frontend. Retro Stranger Things themed synchronized media player.
+
+- Fonts: VT323 (display), Share Tech Mono (body)
+- Key files: `src/pages/home.tsx`, `src/pages/broadcaster.tsx`, `src/pages/listener.tsx`
+- Media player: `src/components/video/media-player.tsx`
+- WebSocket hook: `src/hooks/use-websocket.ts`
+- `vite.config.ts` proxies `/ws` and `/api` to the api-server (port 8080)
+
 ### `artifacts/api-server` (`@workspace/api-server`)
 
-Express 5 API server. Routes live in `src/routes/` and use `@workspace/api-zod` for request and response validation and `@workspace/db` for persistence.
+Express 5 API server with WebSocket support. Routes live in `src/routes/` and `src/lib/`.
 
-- Entry: `src/index.ts` — reads `PORT`, starts Express
-- App setup: `src/app.ts` — mounts CORS, JSON/urlencoded parsing, routes at `/api`
-- Routes: `src/routes/index.ts` mounts sub-routers; `src/routes/health.ts` exposes `GET /health` (full path: `/api/health`)
-- Depends on: `@workspace/db`, `@workspace/api-zod`
-- `pnpm --filter @workspace/api-server run dev` — run the dev server
-- `pnpm --filter @workspace/api-server run build` — production esbuild bundle (`dist/index.cjs`)
-- Build bundles an allowlist of deps (express, cors, pg, drizzle-orm, zod, etc.) and externalizes the rest
+- Entry: `src/index.ts` — creates HTTP server + WebSocket server
+- WebSocket handler: `src/lib/wsHandler.ts`
+- Session manager: `src/lib/sessionManager.ts` (in-memory)
+- Routes: `src/routes/sessions.ts`
+- Dependencies: `express`, `ws`, `uuid`, `@workspace/api-zod`
 
 ### `lib/db` (`@workspace/db`)
 
-Database layer using Drizzle ORM with PostgreSQL. Exports a Drizzle client instance and schema models.
-
-- `src/index.ts` — creates a `Pool` + Drizzle instance, exports schema
-- `src/schema/index.ts` — barrel re-export of all models
-- `src/schema/<modelname>.ts` — table definitions with `drizzle-zod` insert schemas (no models definitions exist right now)
-- `drizzle.config.ts` — Drizzle Kit config (requires `DATABASE_URL`, automatically provided by Replit)
-- Exports: `.` (pool, db, schema), `./schema` (schema only)
-
-Production migrations are handled by Replit when publishing. In development, we just use `pnpm --filter @workspace/db run push`, and we fallback to `pnpm --filter @workspace/db run push-force`.
+Database layer using Drizzle ORM with PostgreSQL. (Currently unused by Hawkins app — sessions are in-memory.)
 
 ### `lib/api-spec` (`@workspace/api-spec`)
 
-Owns the OpenAPI 3.1 spec (`openapi.yaml`) and the Orval config (`orval.config.ts`). Running codegen produces output into two sibling packages:
-
-1. `lib/api-client-react/src/generated/` — React Query hooks + fetch client
-2. `lib/api-zod/src/generated/` — Zod schemas
-
-Run codegen: `pnpm --filter @workspace/api-spec run codegen`
-
-### `lib/api-zod` (`@workspace/api-zod`)
-
-Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used by `api-server` for response validation.
-
-### `lib/api-client-react` (`@workspace/api-client-react`)
-
-Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
-
-### `scripts` (`@workspace/scripts`)
-
-Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+OpenAPI 3.1 spec for REST endpoints. Run codegen: `pnpm --filter @workspace/api-spec run codegen`

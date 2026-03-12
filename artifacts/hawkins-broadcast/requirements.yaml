@@ -1,0 +1,18 @@
+packages:
+  "framer-motion": "Page transitions, retro flicker effects, and smooth animations"
+  "clsx": "Conditional class merging for UI components"
+  "tailwind-merge": "Merging tailwind classes safely"
+  "lucide-react": "Retro-themed icons for the media player and UI"
+
+images:
+  - path: "artifacts/hawkins-broadcast/public/images/hawkins-bg.png"
+    description: "Dark 80s CRT scanline monitor background with subtle red and amber glowing grid lines, VHS distortion, analog horror synthwave aesthetic"
+    aspect_ratio: "16:9"
+  - path: "artifacts/hawkins-broadcast/public/images/logo.png"
+    description: "Retro 80s military top secret classification stamp, red ink, stencil font, distressed texture, Hawkins National Laboratory vibe"
+    aspect_ratio: "16:9"
+
+notes:
+  - "Using native WebSocket API for synchronization connected to /ws path"
+  - "Browser autoplay policies might prevent immediate playback on Listener; added an interaction overlay to unlock audio context"
+  - "WebSocket sync accounts for network latency via custom ping/pong measurement"

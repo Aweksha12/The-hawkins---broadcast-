@@ -1,0 +1,135 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: 'Share Tech Mono', monospace;
+  --font-display: 'VT323', monospace;
+
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-ring: hsl(var(--ring));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+}
+
+:root {
+  --background: 0 0% 4%;
+  --foreground: 33 100% 50%; /* Amber CRT glow */
+  --primary: 0 100% 50%; /* Hawkins Red */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 10%;
+  --secondary-foreground: 33 100% 60%;
+  --muted: 0 0% 12%;
+  --muted-foreground: 33 100% 30%;
+  --accent: 120 100% 25%; /* Terminal Green */
+  --accent-foreground: 120 100% 50%;
+  --destructive: 0 100% 40%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 100% 30%;
+  --ring: 0 100% 50%;
+  --card: 0 0% 6%;
+  --card-foreground: 33 100% 50%;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground antialiased font-sans overflow-x-hidden selection:bg-primary selection:text-white;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    @apply tracking-widest uppercase;
+  }
+}
+
+/* CRT and VHS Effects */
+.crt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 50;
+  background: 
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+    linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  background-size: 100% 2px, 3px 100%;
+  opacity: 0.8;
+}
+
+.crt-flicker {
+  animation: crt-flicker 0.15s infinite;
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,0.02);
+  z-index: 49;
+}
+
+@keyframes crt-flicker {
+  0% { opacity: 0.02; }
+  50% { opacity: 0.05; }
+  100% { opacity: 0.02; }
+}
+
+.glow-text {
+  text-shadow: 0 0 5px currentColor, 0 0 10px currentColor;
+}
+
+.glow-text-red {
+  text-shadow: 0 0 5px hsl(var(--primary)), 0 0 15px hsl(var(--primary));
+}
+
+.glow-box {
+  box-shadow: 0 0 10px inset currentColor, 0 0 15px currentColor;
+}
+
+.glow-box-red {
+  box-shadow: 0 0 10px inset hsl(var(--primary)), 0 0 15px hsl(var(--primary));
+}
+
+/* VHS tracking noise */
+.vhs-tracking {
+  position: absolute;
+  bottom: 10%;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background: white;
+  opacity: 0.1;
+  filter: blur(2px);
+  animation: tracking 3s infinite linear;
+  pointer-events: none;
+  z-index: 40;
+}
+
+@keyframes tracking {
+  0% { transform: translateY(0) scaleY(1); opacity: 0; }
+  10% { transform: translateY(20px) scaleY(2); opacity: 0.1; }
+  20% { transform: translateY(-10px) scaleY(0.5); opacity: 0; }
+  100% { transform: translateY(0) scaleY(1); opacity: 0; }
+}
+
+/* Input custom styles */
+input[type="range"].retro-slider {
+  -webkit-appearance: none;
+  @apply w-full h-2 bg-secondary border border-border outline-none;
+}
+
+input[type="range"].retro-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  @apply w-4 h-6 bg-primary cursor-pointer border border-primary-foreground shadow-[0_0_10px_red];
+}
