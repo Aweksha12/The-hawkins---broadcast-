@@ -97,8 +97,14 @@ export function MediaPlayer({ url, role, sessionId }: MediaPlayerProps) {
       }
 
       if (msg.type === "state" || msg.type === "sync") {
-        applySyncMessage(msg.currentTime, msg.isPlaying, msg.timestamp ?? Date.now());
-      }
+  const m = msg as any;
+
+  applySyncMessage(
+    m.currentTime,
+    m.isPlaying,
+    m.timestamp ? m.timestamp : Date.now()
+  );
+}
     },
     [role] // eslint-disable-line react-hooks/exhaustive-deps
   );

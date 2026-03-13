@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: hawkins-broadcast
+    env: node
+    buildCommand: |
+      corepack enable
+      pnpm install
+      export PORT=5173
+      export BASE_PATH=/
+      pnpm --filter @workspace/hawkins-broadcast run build
+      pnpm --filter @workspace/api-server run build
+    startCommand: node artifacts/api-server/dist/index.cjs
+    healthCheckPath: /api/healthz
+    autoDeploy: true

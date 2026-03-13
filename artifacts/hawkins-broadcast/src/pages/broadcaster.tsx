@@ -14,10 +14,11 @@ export default function Broadcaster() {
   const sessionId = params?.id || "";
   
   const { data: session, isLoading, error } = useGetSession(sessionId, {
-    query: {
-      retry: 1
-    }
-  });
+  query: {
+    queryKey: ["session", sessionId],
+    retry: 1
+  }
+});
 
   const handleCopy = () => {
     navigator.clipboard.writeText(sessionId);
