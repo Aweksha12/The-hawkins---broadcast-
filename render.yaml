@@ -3,11 +3,11 @@ services:
     name: hawkins-broadcast
     env: node
     buildCommand: |
-      npx -y pnpm@9.12.0 install --no-frozen-lockfile
+      npx pnpm@9.12.0 install --config.frozen-lockfile=false
       export PORT=5173
       export BASE_PATH=/
-      npx -y pnpm@9.12.0 --filter @workspace/hawkins-broadcast run build
-      npx -y pnpm@9.12.0 --filter @workspace/api-server run build
+      npx pnpm@9.12.0 --filter @workspace/hawkins-broadcast run build
+      npx pnpm@9.12.0 --filter @workspace/api-server run build
     startCommand: node artifacts/api-server/dist/index.cjs
     healthCheckPath: /api/healthz
     autoDeploy: true
