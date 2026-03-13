@@ -3,11 +3,11 @@ services:
     name: hawkins-broadcast
     env: node
     buildCommand: |
-      npx --yes pnpm@9.12.0 install
+      npx -y pnpm@9.12.0 install
       export PORT=5173
       export BASE_PATH=/
-      npx --yes pnpm@9.12.0 --filter @workspace/hawkins-broadcast run build
-      npx --yes pnpm@9.12.0 --filter @workspace/api-server run build
+      npx -y pnpm@9.12.0 --filter @workspace/hawkins-broadcast run build
+      npx -y pnpm@9.12.0 --filter @workspace/api-server run build
     startCommand: node artifacts/api-server/dist/index.cjs
     healthCheckPath: /api/healthz
     autoDeploy: true
